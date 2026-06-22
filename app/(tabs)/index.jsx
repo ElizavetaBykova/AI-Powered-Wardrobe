@@ -9,7 +9,7 @@ const FILTERS = ['ALL', 'TOPS', 'BOTTOMS', 'OUTERWEAR', 'SHOES'];
 
 function matchesFilter(item, filter) {
   if (filter === 'ALL') return true;
-  if (filter === 'TOPS') return ['top', 'dress'].includes(item.type);
+  if (filter === 'TOPS') return ['top', 'dress', 'jumpsuit'].includes(item.type);
   if (filter === 'BOTTOMS') return item.type === 'bottom';
   if (filter === 'OUTERWEAR') return item.type === 'outerwear';
   if (filter === 'SHOES') return item.type === 'shoes';

@@ -3,7 +3,7 @@ import { Stack, Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts, CormorantGaramond_300Light, CormorantGaramond_500Medium } from '@expo-google-fonts/cormorant-garamond';
+import { useFonts, CormorantGaramond_300Light, CormorantGaramond_500Medium, CormorantGaramond_400Regular_Italic } from '@expo-google-fonts/cormorant-garamond';
 import { supabase } from '../lib/supabase';
 import SplashAnimation from '../components/SplashAnimation';
 
@@ -14,6 +14,7 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     'CormorantGaramond-Light': CormorantGaramond_300Light,
     'CormorantGaramond-Medium': CormorantGaramond_500Medium,
+    'CormorantGaramond-Italic': CormorantGaramond_400Regular_Italic,
   });
 
   useEffect(() => {

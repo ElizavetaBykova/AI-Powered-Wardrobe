@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   outfitHeaderText: { flex: 1 },
   outfitName: { fontFamily: fonts.serifMedium, fontSize: 24, lineHeight: 28, color: colors.text },
   outfitMeta: { fontSize: 9.5, letterSpacing: 2, textTransform: 'uppercase', color: colors.muted, marginTop: 7 },
-  outfitNote: { fontFamily: fonts.serif, fontSize: 16, lineHeight: 24, color: colors.secondary, fontStyle: 'italic', marginTop: 14, marginBottom: 20 },
+  outfitNote: { fontFamily: fonts.serifItalic, fontSize: 16.5, lineHeight: 25, color: colors.secondary, marginTop: 14, marginBottom: 20 },
   piecesRow: { flexDirection: 'row', gap: 9 },
   pieceItem: { flex: 1 },
   pieceImage: { aspectRatio: 3 / 4, backgroundColor: '#ECE8E0', resizeMode: 'cover' },

@@ -12,6 +12,7 @@ export const colors = {
 export const fonts = {
   serif: 'CormorantGaramond-Light',
   serifMedium: 'CormorantGaramond-Medium',
+  serifItalic: 'CormorantGaramond-Italic',
 };
 
 export const spacing = {
