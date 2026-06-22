@@ -1,12 +1,17 @@
 export const colors = {
-  background: '#FAFAFA',
-  card: '#FFFFFF',
-  text: '#111111',
-  secondary: '#666666',
-  muted: '#AAAAAA',
-  accent: '#E8445A',
-  border: '#EEEEEE',
-  error: '#FF3B30',
+  background: '#F4F1EB',
+  card: '#EFEBE3',
+  text: '#14110D',
+  secondary: '#4A453D',
+  muted: '#A39C90',
+  border: 'rgba(20,17,13,0.12)',
+  accent: '#9C7F50',
+  error: '#C0392B',
+};
+
+export const fonts = {
+  serif: 'CormorantGaramond-Light',
+  serifMedium: 'CormorantGaramond-Medium',
 };
 
 export const spacing = {

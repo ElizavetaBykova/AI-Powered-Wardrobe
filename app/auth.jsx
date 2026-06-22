@@ -4,14 +4,14 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { colors, spacing, radius } from '../constants/theme';
+import { spacing } from '../constants/theme';
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null); // { type: 'error' | 'success', text: string }
+  const [message, setMessage] = useState(null);
 
   async function handleAuth() {
     setMessage(null);
@@ -24,7 +24,6 @@ export default function AuthScreen() {
       const { error } = isSignUp
         ? await supabase.auth.signUp({ email: email.trim(), password })
         : await supabase.auth.signInWithPassword({ email: email.trim(), password });
-
       if (error) setMessage({ type: 'error', text: error.message });
       else if (isSignUp) setMessage({ type: 'success', text: 'Check your email for a confirmation link' });
     } catch (e) {
@@ -39,27 +38,36 @@ export default function AuthScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>WARDROBE</Text>
-        <Text style={styles.subtitle}>{isSignUp ? 'Create your account' : 'Welcome back'}</Text>
+      <View style={styles.header}>
+        <Text style={styles.logo}>PIÈCE</Text>
+        <Text style={styles.tagline}>YOUR PERSONAL ARCHIVE</Text>
+      </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete={isSignUp ? 'new-password' : 'current-password'}
-        />
+      <View style={styles.form}>
+        <View style={styles.fieldWrapper}>
+          <Text style={styles.fieldLabel}>EMAIL</Text>
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+            placeholderTextColor="rgba(255,255,255,0.25)"
+          />
+        </View>
+
+        <View style={styles.fieldWrapper}>
+          <Text style={styles.fieldLabel}>PASSWORD</Text>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete={isSignUp ? 'new-password' : 'current-password'}
+            placeholderTextColor="rgba(255,255,255,0.25)"
+          />
+        </View>
 
         {message && (
           <Text style={message.type === 'error' ? styles.errorText : styles.successText}>
@@ -69,13 +77,17 @@ export default function AuthScreen() {
 
         <TouchableOpacity style={styles.button} onPress={handleAuth} disabled={loading}>
           <Text style={styles.buttonText}>
-            {loading ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Sign In'}
+            {loading ? '·  ·  ·' : isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.toggle} onPress={() => setIsSignUp(!isSignUp)}>
+        <TouchableOpacity
+          style={styles.toggle}
+          onPress={() => { setIsSignUp(!isSignUp); setMessage(null); }}
+        >
           <Text style={styles.toggleText}>
-            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            {isSignUp ? 'Already have an account?  ' : "Don't have an account?  "}
+            <Text style={styles.toggleLink}>{isSignUp ? 'Sign in' : 'Sign up'}</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -86,53 +98,64 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#0A0A0A',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl * 2,
+    paddingBottom: spacing.xl,
+  },
+  header: {
+    flex: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+  logo: {
+    fontFamily: 'CormorantGaramond-Light',
+    fontSize: 64,
+    color: '#FFFFFF',
+    letterSpacing: 18,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    letterSpacing: 6,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-    color: colors.text,
+  tagline: {
+    fontSize: 9,
+    letterSpacing: 4,
+    color: 'rgba(255,255,255,0.35)',
   },
-  subtitle: {
-    fontSize: 14,
-    color: colors.secondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
+  form: {
+    gap: spacing.lg,
+  },
+  fieldWrapper: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.2)',
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: 9,
+    letterSpacing: 3,
+    color: 'rgba(255,255,255,0.4)',
   },
   input: {
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    marginBottom: spacing.sm,
     fontSize: 16,
-    color: colors.text,
+    color: '#FFFFFF',
+    paddingVertical: 4,
   },
   button: {
-    backgroundColor: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.5)',
+    paddingVertical: spacing.md,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  buttonText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
-  toggle: { marginTop: spacing.md, alignItems: 'center' },
-  toggleText: { fontSize: 14, color: colors.secondary },
-  errorText: { fontSize: 13, color: '#C0392B', textAlign: 'center', marginBottom: spacing.sm },
-  successText: { fontSize: 13, color: '#27AE60', textAlign: 'center', marginBottom: spacing.sm },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    letterSpacing: 4,
+    fontWeight: '500',
+  },
+  toggle: { alignItems: 'center' },
+  toggleText: { fontSize: 12, color: 'rgba(255,255,255,0.35)' },
+  toggleLink: { color: 'rgba(255,255,255,0.7)' },
+  errorText: { fontSize: 12, color: '#E74C3C', textAlign: 'center' },
+  successText: { fontSize: 12, color: '#58D68D', textAlign: 'center' },
 });

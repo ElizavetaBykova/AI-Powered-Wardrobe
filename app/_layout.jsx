@@ -1,11 +1,20 @@
 import 'react-native-url-polyfill/auto';
 import { Stack, Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts, CormorantGaramond_300Light, CormorantGaramond_500Medium } from '@expo-google-fonts/cormorant-garamond';
 import { supabase } from '../lib/supabase';
+import SplashAnimation from '../components/SplashAnimation';
 
 export default function RootLayout() {
+  const [showIntro, setShowIntro] = useState(true);
   const [session, setSession] = useState(undefined);
+
+  const [fontsLoaded] = useFonts({
+    'CormorantGaramond-Light': CormorantGaramond_300Light,
+    'CormorantGaramond-Medium': CormorantGaramond_500Medium,
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -19,7 +28,13 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (session === undefined) return null;
+  if (!fontsLoaded || session === undefined) {
+    return <View style={{ flex: 1, backgroundColor: '#0A0A0A' }} />;
+  }
+
+  if (showIntro) {
+    return <SplashAnimation onDone={() => setShowIntro(false)} />;
+  }
 
   return (
     <>
@@ -30,15 +45,17 @@ export default function RootLayout() {
           name="add-item"
           options={{
             presentation: 'modal',
-            title: 'Add Clothing',
+            title: 'ADD ITEM',
             headerStyle: { backgroundColor: '#FAFAFA' },
+            headerTitleStyle: { fontFamily: 'CormorantGaramond-Medium', fontSize: 16, letterSpacing: 4 },
           }}
         />
         <Stack.Screen
           name="item/[id]"
           options={{
-            title: 'Item Details',
+            title: 'PIÈCE',
             headerStyle: { backgroundColor: '#FAFAFA' },
+            headerTitleStyle: { fontFamily: 'CormorantGaramond-Light', fontSize: 22, letterSpacing: 8 },
           }}
         />
         <Stack.Screen name="auth" options={{ headerShown: false }} />

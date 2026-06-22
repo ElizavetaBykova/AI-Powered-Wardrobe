@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { analyzeClothing, readImageAsBase64 } from '../lib/claude';
 import { uploadClothingImage } from '../lib/storage';
 import LoadingOverlay from '../components/LoadingOverlay';
-import { colors, spacing, radius } from '../constants/theme';
+import { colors, spacing, fonts } from '../constants/theme';
 
 function randomUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -49,7 +49,7 @@ export default function AddItemScreen() {
 
   async function analyzeImage() {
     if (!imageData) return;
-    setLoadingText('Analyzing with AI...');
+    setLoadingText('Analyzing with AI…');
     try {
       const result = await analyzeClothing(imageData.base64, imageData.mediaType);
       setForm({
@@ -74,7 +74,7 @@ export default function AddItemScreen() {
 
   async function saveItem() {
     if (!imageData) { Alert.alert('No image', 'Please select an image first'); return; }
-    setLoadingText('Saving to wardrobe...');
+    setLoadingText('Saving to wardrobe…');
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const itemId = randomUUID();
@@ -114,78 +114,85 @@ export default function AddItemScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {loadingText && <LoadingOverlay message={loadingText} />}
 
+      {/* Image Section */}
       <View style={styles.imageSection}>
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.previewImage} />
         ) : (
           <View style={styles.imagePlaceholder}>
-            <Text style={styles.placeholderIcon}>📷</Text>
-            <Text style={styles.placeholderText}>Select a photo</Text>
+            <View style={styles.placeholderDiamond} />
+            <Text style={styles.placeholderText}>SELECT A PHOTO</Text>
           </View>
         )}
         <View style={styles.imageButtons}>
-          <TouchableOpacity style={styles.outlineButton} onPress={() => pickImage(false)}>
-            <Text style={styles.outlineButtonText}>Gallery</Text>
+          <TouchableOpacity style={styles.outlineBtn} onPress={() => pickImage(false)}>
+            <Text style={styles.outlineBtnText}>GALLERY</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.outlineButton} onPress={() => pickImage(true)}>
-            <Text style={styles.outlineButtonText}>Camera</Text>
+          <TouchableOpacity style={styles.outlineBtn} onPress={() => pickImage(true)}>
+            <Text style={styles.outlineBtnText}>CAMERA</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {imageUri && !analyzed && (
-        <TouchableOpacity style={styles.analyzeButton} onPress={analyzeImage}>
-          <Text style={styles.analyzeButtonText}>✨ Analyze with AI</Text>
+        <TouchableOpacity style={styles.analyzeBtn} onPress={analyzeImage}>
+          <View style={styles.analyzeDiamond} />
+          <Text style={styles.analyzeBtnText}>ANALYSE WITH AI</Text>
         </TouchableOpacity>
       )}
 
       {imageUri && !analyzed && (
-        <TouchableOpacity style={styles.skipButton} onPress={() => setAnalyzed(true)}>
-          <Text style={styles.skipButtonText}>Skip analysis, fill manually</Text>
+        <TouchableOpacity style={styles.skipBtn} onPress={() => setAnalyzed(true)}>
+          <Text style={styles.skipBtnText}>fill in manually</Text>
         </TouchableOpacity>
       )}
 
       {analyzed && (
         <>
           <View style={styles.field}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput style={styles.input} value={form.name} onChangeText={(v) => set('name', v)} />
+            <Text style={styles.label}>NAME</Text>
+            <TextInput
+              style={styles.input}
+              value={form.name}
+              onChangeText={(v) => set('name', v)}
+            />
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>DESCRIPTION</Text>
             <TextInput
               style={[styles.input, styles.multiline]}
               value={form.description}
               onChangeText={(v) => set('description', v)}
-              multiline numberOfLines={3}
+              multiline
+              numberOfLines={3}
             />
           </View>
 
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Type</Text>
+              <Text style={styles.label}>TYPE</Text>
               <TextInput style={styles.input} value={form.type} onChangeText={(v) => set('type', v)} />
             </View>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Color</Text>
+              <Text style={styles.label}>COLOUR</Text>
               <TextInput style={styles.input} value={form.color} onChangeText={(v) => set('color', v)} />
             </View>
           </View>
 
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Style</Text>
+              <Text style={styles.label}>STYLE</Text>
               <TextInput style={styles.input} value={form.style} onChangeText={(v) => set('style', v)} />
             </View>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Material</Text>
+              <Text style={styles.label}>MATERIAL</Text>
               <TextInput style={styles.input} value={form.material} onChangeText={(v) => set('material', v)} />
             </View>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Warmth  {form.warmth_level}/5</Text>
+            <Text style={styles.label}>WARMTH  {form.warmth_level}/5</Text>
             <View style={styles.warmthRow}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <TouchableOpacity
@@ -193,7 +200,7 @@ export default function AddItemScreen() {
                   style={[styles.warmthBtn, form.warmth_level === n && styles.warmthBtnActive]}
                   onPress={() => set('warmth_level', n)}
                 >
-                  <Text style={[styles.warmthBtnText, form.warmth_level === n && styles.warmthBtnTextActive]}>
+                  <Text style={[styles.warmthNum, form.warmth_level === n && styles.warmthNumActive]}>
                     {n}
                   </Text>
                 </TouchableOpacity>
@@ -203,7 +210,7 @@ export default function AddItemScreen() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Season</Text>
+            <Text style={styles.label}>SEASON</Text>
             <View style={styles.chips}>
               {SEASONS.map((s) => (
                 <TouchableOpacity
@@ -211,14 +218,16 @@ export default function AddItemScreen() {
                   style={[styles.chip, form.season.includes(s) && styles.chipActive]}
                   onPress={() => toggle('season', s)}
                 >
-                  <Text style={[styles.chipText, form.season.includes(s) && styles.chipTextActive]}>{s}</Text>
+                  <Text style={[styles.chipText, form.season.includes(s) && styles.chipTextActive]}>
+                    {s}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Occasion</Text>
+            <Text style={styles.label}>OCCASION</Text>
             <View style={styles.chips}>
               {OCCASIONS.map((o) => (
                 <TouchableOpacity
@@ -226,25 +235,29 @@ export default function AddItemScreen() {
                   style={[styles.chip, form.occasion.includes(o) && styles.chipActive]}
                   onPress={() => toggle('occasion', o)}
                 >
-                  <Text style={[styles.chipText, form.occasion.includes(o) && styles.chipTextActive]}>{o}</Text>
+                  <Text style={[styles.chipText, form.occasion.includes(o) && styles.chipTextActive]}>
+                    {o}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Personal Notes</Text>
+            <Text style={styles.label}>PERSONAL NOTES</Text>
             <TextInput
               style={[styles.input, styles.multiline]}
               value={form.user_notes}
               onChangeText={(v) => set('user_notes', v)}
-              placeholder="e.g. too warm in summer, favorite jacket, great material..."
-              multiline numberOfLines={3}
+              placeholder="Your thoughts on this piece…"
+              placeholderTextColor={colors.muted}
+              multiline
+              numberOfLines={3}
             />
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={saveItem}>
-            <Text style={styles.saveButtonText}>Save to Wardrobe</Text>
+          <TouchableOpacity style={styles.saveBtn} onPress={saveItem}>
+            <Text style={styles.saveBtnText}>ADD TO WARDROBE</Text>
           </TouchableOpacity>
         </>
       )}
@@ -254,61 +267,105 @@ export default function AddItemScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md, paddingBottom: 40, gap: spacing.md },
+  content: { padding: spacing.md, paddingBottom: 50, gap: spacing.lg },
+
   imageSection: { gap: spacing.sm },
-  previewImage: { width: '100%', height: 300, borderRadius: radius.md, resizeMode: 'cover' },
+  previewImage: { width: '100%', aspectRatio: 3 / 4, resizeMode: 'cover' },
   imagePlaceholder: {
-    width: '100%', height: 220, borderRadius: radius.md,
-    backgroundColor: colors.border, justifyContent: 'center', alignItems: 'center', gap: spacing.sm,
+    width: '100%',
+    aspectRatio: 4 / 3,
+    backgroundColor: '#ECE8E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  placeholderIcon: { fontSize: 40 },
-  placeholderText: { fontSize: 14, color: colors.muted },
+  placeholderDiamond: {
+    width: 28,
+    height: 28,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    transform: [{ rotate: '45deg' }],
+  },
+  placeholderText: { fontSize: 9, letterSpacing: 4, color: colors.muted },
+
   imageButtons: { flexDirection: 'row', gap: spacing.sm },
-  outlineButton: {
-    flex: 1, borderWidth: 1.5, borderColor: colors.border,
-    borderRadius: radius.md, padding: spacing.sm, alignItems: 'center',
+  outlineBtn: {
+    flex: 1,
+    height: 46,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.card,
   },
-  outlineButtonText: { fontSize: 14, fontWeight: '600', color: colors.text },
-  analyzeButton: {
-    backgroundColor: colors.text, borderRadius: radius.md,
-    padding: spacing.md, alignItems: 'center',
+  outlineBtnText: { fontSize: 10, letterSpacing: 3, color: colors.text },
+
+  analyzeBtn: {
+    height: 54,
+    backgroundColor: colors.text,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
-  analyzeButtonText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
-  skipButton: { alignItems: 'center', padding: spacing.xs },
-  skipButtonText: { color: colors.secondary, fontSize: 13 },
+  analyzeDiamond: {
+    width: 10,
+    height: 10,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    transform: [{ rotate: '45deg' }],
+  },
+  analyzeBtnText: { fontSize: 10, letterSpacing: 4, color: '#F4F1EB' },
+
+  skipBtn: { alignItems: 'center', paddingVertical: spacing.xs },
+  skipBtnText: { fontSize: 12, color: colors.muted, textDecorationLine: 'underline' },
+
   field: { gap: spacing.xs },
   row: { flexDirection: 'row', gap: spacing.sm },
-  label: { fontSize: 12, fontWeight: '700', color: colors.secondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { fontSize: 9, letterSpacing: 3, color: colors.muted },
   input: {
-    backgroundColor: colors.card, borderRadius: radius.md,
-    paddingHorizontal: spacing.md, paddingVertical: 10,
-    fontSize: 15, color: colors.text,
-    borderWidth: 1, borderColor: colors.border,
+    fontFamily: fonts.serif,
+    fontSize: 17,
+    color: colors.text,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'transparent',
   },
-  multiline: { minHeight: 80, textAlignVertical: 'top', paddingTop: 10 },
+  multiline: { minHeight: 70, textAlignVertical: 'top' },
+
   warmthRow: { flexDirection: 'row', gap: spacing.sm },
   warmthBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: radius.md,
-    borderWidth: 1.5, borderColor: colors.border, alignItems: 'center',
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
     backgroundColor: colors.card,
   },
   warmthBtnActive: { backgroundColor: colors.text, borderColor: colors.text },
-  warmthBtnText: { fontSize: 15, fontWeight: '600', color: colors.secondary },
-  warmthBtnTextActive: { color: '#FFF' },
-  warmthHint: { fontSize: 11, color: colors.muted, textAlign: 'center' },
+  warmthNum: { fontSize: 14, color: colors.secondary },
+  warmthNumActive: { color: '#F4F1EB' },
+  warmthHint: { fontSize: 10, letterSpacing: 1, color: colors.muted, textAlign: 'center' },
+
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: {
-    paddingHorizontal: spacing.md, paddingVertical: 7,
-    borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.card,
   },
   chipActive: { backgroundColor: colors.text, borderColor: colors.text },
-  chipText: { fontSize: 13, color: colors.secondary, textTransform: 'capitalize' },
-  chipTextActive: { color: '#FFF', fontWeight: '600' },
-  saveButton: {
-    backgroundColor: colors.text, borderRadius: radius.md,
-    padding: spacing.md, alignItems: 'center', marginTop: spacing.sm,
+  chipText: { fontSize: 10, letterSpacing: 1.5, textTransform: 'capitalize', color: colors.secondary },
+  chipTextActive: { color: '#F4F1EB' },
+
+  saveBtn: {
+    height: 58,
+    backgroundColor: colors.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
-  saveButtonText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+  saveBtnText: { fontSize: 11, letterSpacing: 4, color: '#F4F1EB' },
 });

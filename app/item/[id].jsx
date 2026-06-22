@@ -6,7 +6,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import { colors, spacing, radius } from '../../constants/theme';
+import { colors, spacing, fonts } from '../../constants/theme';
 
 const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
 const OCCASIONS = ['everyday', 'work', 'party', 'date', 'sport', 'beach', 'travel', 'formal-event'];
@@ -20,9 +20,7 @@ export default function ItemDetailScreen() {
     name: '', user_notes: '', warmth_level: 3, season: [], occasion: [],
   });
 
-  useEffect(() => {
-    loadItem();
-  }, [id]);
+  useEffect(() => { loadItem(); }, [id]);
 
   async function loadItem() {
     const { data, error } = await supabase.from('clothing_items').select('*').eq('id', id).single();
@@ -46,11 +44,11 @@ export default function ItemDetailScreen() {
       .eq('id', id);
     setSaving(false);
     if (error) Alert.alert('Error', error.message);
-    else Alert.alert('Saved', 'Your changes have been saved');
+    else router.back();
   }
 
   async function deleteItem() {
-    Alert.alert('Remove Item', 'Remove this item from your wardrobe?', [
+    Alert.alert('Remove Piece', 'Remove this piece from your wardrobe?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove', style: 'destructive',
@@ -62,10 +60,7 @@ export default function ItemDetailScreen() {
     ]);
   }
 
-  function set(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
-
+  function set(field, value) { setForm((prev) => ({ ...prev, [field]: value })); }
   function toggle(field, value) {
     setForm((prev) => ({
       ...prev,
@@ -79,163 +74,249 @@ export default function ItemDetailScreen() {
   if (!item) return null;
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       {saving && <LoadingOverlay message="Saving..." />}
+      <ScrollView showsVerticalScrollIndicator={false}>
 
-      {item.image_url && (
-        <Image source={{ uri: item.image_url }} style={styles.image} />
-      )}
-
-      <View style={styles.content}>
-        <View style={styles.badges}>
-          {[item.type, item.style, item.color].filter(Boolean).map((tag) => (
-            <View key={tag} style={styles.badge}>
-              <Text style={styles.badgeText}>{tag}</Text>
-            </View>
-          ))}
+        {/* Hero image */}
+        <View style={styles.imageWrap}>
+          {item.image_url
+            ? <Image source={{ uri: item.image_url }} style={styles.image} />
+            : <View style={[styles.image, styles.imagePlaceholder]} />
+          }
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <View style={styles.chevron} />
+          </TouchableOpacity>
         </View>
 
-        {item.description ? (
-          <Text style={styles.description}>{item.description}</Text>
-        ) : null}
+        <View style={styles.content}>
+          {/* Category */}
+          {item.type ? (
+            <Text style={styles.category}>{item.type.toUpperCase()}</Text>
+          ) : null}
 
-        {item.material ? (
-          <Text style={styles.material}>Material: {item.material}</Text>
-        ) : null}
-
-        <View style={styles.divider} />
-        <Text style={styles.sectionTitle}>Customize</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Name</Text>
+          {/* Name (editable) */}
           <TextInput
-            style={styles.input}
+            style={styles.nameInput}
             value={form.name}
             onChangeText={(v) => set('name', v)}
+            multiline
           />
-        </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Warmth  {form.warmth_level}/5</Text>
-          <View style={styles.warmthRow}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <TouchableOpacity
-                key={n}
-                style={[styles.warmthBtn, form.warmth_level === n && styles.warmthBtnActive]}
-                onPress={() => set('warmth_level', n)}
-              >
-                <Text style={[styles.warmthBtnText, form.warmth_level === n && styles.warmthBtnTextActive]}>
-                  {n}
-                </Text>
-              </TouchableOpacity>
+          {/* Description */}
+          {item.description ? (
+            <Text style={styles.description}>{item.description}</Text>
+          ) : null}
+
+          {/* Metadata rows */}
+          <View style={styles.metaTable}>
+            {[
+              ['Colour', item.color],
+              ['Material', item.material],
+              ['Style', item.style],
+            ].filter(([, v]) => v).map(([label, value]) => (
+              <View key={label} style={styles.metaRow}>
+                <Text style={styles.metaLabel}>{label.toUpperCase()}</Text>
+                <Text style={styles.metaValue}>{value}</Text>
+              </View>
             ))}
           </View>
-          <Text style={styles.warmthHint}>1 = very light  ·  5 = very warm</Text>
-        </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Season</Text>
-          <View style={styles.chips}>
-            {SEASONS.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.chip, form.season.includes(s) && styles.chipActive]}
-                onPress={() => toggle('season', s)}
-              >
-                <Text style={[styles.chipText, form.season.includes(s) && styles.chipTextActive]}>{s}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Warmth */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>WARMTH  {form.warmth_level}/5</Text>
+            <View style={styles.warmthRow}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <TouchableOpacity
+                  key={n}
+                  style={[styles.warmthBtn, form.warmth_level === n && styles.warmthBtnActive]}
+                  onPress={() => set('warmth_level', n)}
+                >
+                  <Text style={[styles.warmthNum, form.warmth_level === n && styles.warmthNumActive]}>
+                    {n}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Occasion</Text>
-          <View style={styles.chips}>
-            {OCCASIONS.map((o) => (
-              <TouchableOpacity
-                key={o}
-                style={[styles.chip, form.occasion.includes(o) && styles.chipActive]}
-                onPress={() => toggle('occasion', o)}
-              >
-                <Text style={[styles.chipText, form.occasion.includes(o) && styles.chipTextActive]}>{o}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Season */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>SEASON</Text>
+            <View style={styles.chips}>
+              {SEASONS.map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.chip, form.season.includes(s) && styles.chipActive]}
+                  onPress={() => toggle('season', s)}
+                >
+                  <Text style={[styles.chipText, form.season.includes(s) && styles.chipTextActive]}>
+                    {s}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
+
+          {/* Occasion */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>OCCASION</Text>
+            <View style={styles.chips}>
+              {OCCASIONS.map((o) => (
+                <TouchableOpacity
+                  key={o}
+                  style={[styles.chip, form.occasion.includes(o) && styles.chipActive]}
+                  onPress={() => toggle('occasion', o)}
+                >
+                  <Text style={[styles.chipText, form.occasion.includes(o) && styles.chipTextActive]}>
+                    {o}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Notes */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>PERSONAL NOTES</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={form.user_notes}
+              onChangeText={(v) => set('user_notes', v)}
+              placeholder="Your thoughts on this piece…"
+              placeholderTextColor={colors.muted}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Style This Piece → Outfits */}
+          <TouchableOpacity style={styles.styleBtn} onPress={() => router.push('/(tabs)/outfits')}>
+            <Text style={styles.styleBtnText}>STYLE THIS PIECE</Text>
+          </TouchableOpacity>
+
+          {/* Save */}
+          <TouchableOpacity style={styles.saveBtn} onPress={saveChanges}>
+            <Text style={styles.saveBtnText}>SAVE CHANGES</Text>
+          </TouchableOpacity>
+
+          {/* Delete */}
+          <TouchableOpacity style={styles.deleteBtn} onPress={deleteItem}>
+            <Text style={styles.deleteBtnText}>Remove from Wardrobe</Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Personal Notes</Text>
-          <TextInput
-            style={[styles.input, styles.multiline]}
-            value={form.user_notes}
-            onChangeText={(v) => set('user_notes', v)}
-            placeholder="e.g. too warm in summer, favourite piece, great for dates..."
-            multiline numberOfLines={4}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
-          <Text style={styles.saveButtonText}>Save Changes</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.deleteButton} onPress={deleteItem}>
-          <Text style={styles.deleteButtonText}>Remove from Wardrobe</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  image: { width: '100%', height: 380, resizeMode: 'cover' },
-  content: { padding: spacing.md, paddingBottom: 40, gap: spacing.md },
-  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  badge: {
-    backgroundColor: colors.border, borderRadius: radius.full,
-    paddingHorizontal: spacing.sm, paddingVertical: 4,
+  imageWrap: { position: 'relative', width: '100%', height: 440, backgroundColor: '#ECE8E0' },
+  image: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imagePlaceholder: { backgroundColor: '#E5E0D6' },
+  backBtn: {
+    position: 'absolute',
+    top: 54,
+    left: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(244,241,235,0.82)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badgeText: { fontSize: 12, color: colors.secondary, textTransform: 'capitalize' },
-  description: { fontSize: 14, color: colors.text, lineHeight: 20 },
-  material: { fontSize: 13, color: colors.secondary },
-  divider: { height: 1, backgroundColor: colors.border },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-  field: { gap: spacing.xs },
-  label: { fontSize: 12, fontWeight: '700', color: colors.secondary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: {
-    backgroundColor: colors.card, borderRadius: radius.md,
-    paddingHorizontal: spacing.md, paddingVertical: 10,
-    fontSize: 15, color: colors.text,
-    borderWidth: 1, borderColor: colors.border,
+  chevron: {
+    width: 10,
+    height: 10,
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: colors.text,
+    transform: [{ rotate: '45deg' }],
+    marginLeft: 3,
   },
-  multiline: { minHeight: 90, textAlignVertical: 'top', paddingTop: 10 },
+  content: { padding: 26, paddingBottom: 60, gap: spacing.lg },
+  category: {
+    fontSize: 10,
+    letterSpacing: 3,
+    color: colors.accent,
+  },
+  nameInput: {
+    fontFamily: fonts.serifMedium,
+    fontSize: 30,
+    lineHeight: 34,
+    color: colors.text,
+    padding: 0,
+    marginTop: -spacing.sm,
+  },
+  description: {
+    fontFamily: fonts.serif,
+    fontSize: 17,
+    lineHeight: 26,
+    color: colors.secondary,
+    fontStyle: 'italic',
+  },
+  metaTable: { gap: 0 },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 13,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  metaLabel: { fontSize: 10, letterSpacing: 2, color: colors.muted },
+  metaValue: { fontSize: 10, letterSpacing: 2, color: colors.text, textTransform: 'capitalize' },
+  field: { gap: spacing.sm },
+  fieldLabel: { fontSize: 9, letterSpacing: 3, color: colors.muted },
   warmthRow: { flexDirection: 'row', gap: spacing.sm },
   warmthBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: radius.md,
-    borderWidth: 1.5, borderColor: colors.border, alignItems: 'center',
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
     backgroundColor: colors.card,
   },
   warmthBtnActive: { backgroundColor: colors.text, borderColor: colors.text },
-  warmthBtnText: { fontSize: 15, fontWeight: '600', color: colors.secondary },
-  warmthBtnTextActive: { color: '#FFF' },
-  warmthHint: { fontSize: 11, color: colors.muted, textAlign: 'center' },
+  warmthNum: { fontSize: 14, color: colors.secondary },
+  warmthNumActive: { color: '#F4F1EB' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: {
-    paddingHorizontal: spacing.md, paddingVertical: 7,
-    borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.card,
   },
   chipActive: { backgroundColor: colors.text, borderColor: colors.text },
-  chipText: { fontSize: 13, color: colors.secondary, textTransform: 'capitalize' },
-  chipTextActive: { color: '#FFF', fontWeight: '600' },
-  saveButton: {
-    backgroundColor: colors.text, borderRadius: radius.md,
-    padding: spacing.md, alignItems: 'center',
+  chipText: { fontSize: 10, letterSpacing: 1.5, textTransform: 'capitalize', color: colors.secondary },
+  chipTextActive: { color: '#F4F1EB' },
+  notesInput: {
+    fontFamily: fonts.serif,
+    fontSize: 16,
+    color: colors.text,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingVertical: spacing.sm,
+    minHeight: 60,
+    textAlignVertical: 'top',
   },
-  saveButtonText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
-  deleteButton: {
-    borderWidth: 1.5, borderColor: colors.error, borderRadius: radius.md,
-    padding: spacing.md, alignItems: 'center',
+  styleBtn: {
+    height: 54,
+    borderWidth: 1,
+    borderColor: colors.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
   },
-  deleteButtonText: { color: colors.error, fontWeight: '600', fontSize: 15 },
+  styleBtnText: { fontSize: 11, letterSpacing: 4, color: colors.text },
+  saveBtn: {
+    height: 56,
+    backgroundColor: colors.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveBtnText: { fontSize: 11, letterSpacing: 4, color: '#F4F1EB', fontWeight: '500' },
+  deleteBtn: { alignItems: 'center', paddingVertical: spacing.sm },
+  deleteBtnText: { fontSize: 12, color: colors.muted, textDecorationLine: 'underline' },
 });

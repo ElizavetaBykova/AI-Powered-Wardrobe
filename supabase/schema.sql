@@ -56,3 +56,24 @@ CREATE POLICY "Public image access"
 CREATE POLICY "Users can delete own images"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'clothing-images' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- 4. Saved outfit collections
+CREATE TABLE outfit_collections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  outfits JSONB NOT NULL,
+  item_map JSONB NOT NULL,
+  wardrobe_key TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE outfit_collections ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own outfit collections"
+  ON outfit_collections FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own outfit collections"
+  ON outfit_collections FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own outfit collections"
+  ON outfit_collections FOR DELETE USING (auth.uid() = user_id);

@@ -1,19 +1,22 @@
 import { TouchableOpacity, Image, Text, View, StyleSheet } from 'react-native';
-import { colors, spacing, radius } from '../constants/theme';
+import { colors, fonts } from '../constants/theme';
 
-export default function ClothingCard({ item, onPress }) {
+export default function ClothingCard({ item, index, onPress }) {
+  const num = String((index ?? 0) + 1).padStart(2, '0');
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
-      {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.image} />
-      ) : (
-        <View style={[styles.image, styles.placeholder]}>
-          <Text style={styles.placeholderIcon}>👕</Text>
-        </View>
-      )}
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+      <View style={styles.imageWrap}>
+        {item.image_url ? (
+          <Image source={{ uri: item.image_url }} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.placeholder]} />
+        )}
+        <Text style={styles.num}>{num}</Text>
+      </View>
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{item.name || 'Unnamed item'}</Text>
-        <Text style={styles.meta}>{item.type} · {item.color}</Text>
+        <Text style={styles.name} numberOfLines={2}>{item.name || 'Unnamed'}</Text>
+        <Text style={styles.meta}>{[item.type, item.color].filter(Boolean).join(' · ')}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -22,27 +25,43 @@ export default function ClothingCard({ item, onPress }) {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
+  },
+  imageWrap: {
+    position: 'relative',
+    aspectRatio: 3 / 4,
+    backgroundColor: '#ECE8E0',
     overflow: 'hidden',
-    marginBottom: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
   },
   image: {
     width: '100%',
-    aspectRatio: 3 / 4,
+    height: '100%',
+    resizeMode: 'cover',
   },
   placeholder: {
-    backgroundColor: colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#E5E0D6',
   },
-  placeholderIcon: { fontSize: 36 },
-  info: { padding: spacing.sm },
-  name: { fontSize: 13, fontWeight: '600', color: colors.text },
-  meta: { fontSize: 11, color: colors.secondary, marginTop: 2, textTransform: 'capitalize' },
+  num: {
+    position: 'absolute',
+    top: 9,
+    left: 9,
+    fontFamily: fonts.serif,
+    fontSize: 12,
+    color: colors.accent,
+    opacity: 0.9,
+  },
+  info: { paddingTop: 11 },
+  name: {
+    fontFamily: fonts.serifMedium,
+    fontSize: 17,
+    lineHeight: 20,
+    color: colors.text,
+    letterSpacing: 0.2,
+  },
+  meta: {
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: colors.muted,
+    marginTop: 6,
+  },
 });
