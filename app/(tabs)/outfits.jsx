@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateOutfits } from '../../lib/claude';
 import LoadingOverlay from '../../components/LoadingOverlay';
+import ProfileAvatar from '../../components/ProfileAvatar';
 import { colors, spacing, fonts } from '../../constants/theme';
 
 function computeWardrobeKey(items) {
@@ -92,6 +93,7 @@ export default function OutfitsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
+          <ProfileAvatar style={styles.avatarBtn} />
           <Text style={styles.title}>PIÈCE</Text>
           <Text style={styles.subtitle}>Styled For You</Text>
         </View>
@@ -158,7 +160,8 @@ export default function OutfitsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { paddingBottom: 110, gap: spacing.md },
-  header: { paddingTop: 60, paddingHorizontal: 22, alignItems: 'center', paddingBottom: spacing.lg },
+  header: { paddingTop: 60, paddingHorizontal: 22, alignItems: 'center', paddingBottom: spacing.lg, position: 'relative' },
+  avatarBtn: { position: 'absolute', left: 22, top: 60 },
   title: { fontFamily: fonts.serif, fontSize: 23, letterSpacing: 8, color: colors.text },
   subtitle: { fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: colors.muted, marginTop: 8 },
   generateBtn: {

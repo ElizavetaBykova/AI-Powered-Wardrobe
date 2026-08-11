@@ -32,6 +32,14 @@ export default function AddItemScreen() {
   });
 
   async function pickImage(fromCamera) {
+    const perm = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Enable access in Settings to continue.');
+      return;
+    }
+
     const fn = fromCamera
       ? ImagePicker.launchCameraAsync
       : ImagePicker.launchImageLibraryAsync;

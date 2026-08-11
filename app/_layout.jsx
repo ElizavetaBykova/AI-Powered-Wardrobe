@@ -60,6 +60,15 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="profile"
+          options={{
+            presentation: 'modal',
+            title: 'PROFILE',
+            headerStyle: { backgroundColor: '#FAFAFA' },
+            headerTitleStyle: { fontFamily: 'CormorantGaramond-Medium', fontSize: 16, letterSpacing: 4 },
+          }}
+        />
       </Stack>
       {!session && <Redirect href="/auth" />}
     </>

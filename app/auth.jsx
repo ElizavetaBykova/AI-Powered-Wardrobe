@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { spacing } from '../constants/theme';
 
@@ -21,11 +22,12 @@ export default function AuthScreen() {
     }
     setLoading(true);
     try {
-      const { error } = isSignUp
+      const { data, error } = isSignUp
         ? await supabase.auth.signUp({ email: email.trim(), password })
         : await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) setMessage({ type: 'error', text: error.message });
-      else if (isSignUp) setMessage({ type: 'success', text: 'Check your email for a confirmation link' });
+      else if (isSignUp && !data.session) setMessage({ type: 'success', text: 'Check your email for a confirmation link' });
+      else router.replace('/(tabs)');
     } catch (e) {
       setMessage({ type: 'error', text: e.message });
     } finally {

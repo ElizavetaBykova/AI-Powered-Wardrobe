@@ -3,6 +3,7 @@ import { View, FlatList, TouchableOpacity, Text, StyleSheet, Alert, ScrollView }
 import { useFocusEffect, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import ClothingCard from '../../components/ClothingCard';
+import ProfileAvatar from '../../components/ProfileAvatar';
 import { colors, spacing, fonts } from '../../constants/theme';
 
 const FILTERS = ['ALL', 'TOPS', 'BOTTOMS', 'OUTERWEAR', 'SHOES'];
@@ -42,6 +43,7 @@ export default function WardrobeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
+          <ProfileAvatar style={styles.avatarBtn} />
           <Text style={styles.title}>PIÈCE</Text>
           <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-item')}>
             <View style={styles.addIcon}>
@@ -128,6 +130,10 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarBtn: {
+    position: 'absolute',
+    left: 0,
   },
   addIcon: { width: 13, height: 13, position: 'relative' },
   addH: { position: 'absolute', top: 6, left: 0, width: 13, height: 1, backgroundColor: colors.text },
