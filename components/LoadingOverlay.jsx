@@ -1,23 +1,12 @@
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '../constants/theme';
+import Spinner from './Spinner';
 
 export default function LoadingOverlay({ message = 'Loading…' }) {
-  const pulse = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
   return (
     <View style={styles.overlay}>
       <View style={styles.box}>
-        <Animated.View style={[styles.diamond, { opacity: pulse }]} />
+        <Spinner size={30} thickness={2} />
         <Text style={styles.text}>{message}</Text>
       </View>
     </View>
@@ -33,13 +22,6 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   box: { alignItems: 'center', gap: 20 },
-  diamond: {
-    width: 28,
-    height: 28,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    transform: [{ rotate: '45deg' }],
-  },
   text: {
     fontFamily: fonts.serif,
     fontSize: 14,

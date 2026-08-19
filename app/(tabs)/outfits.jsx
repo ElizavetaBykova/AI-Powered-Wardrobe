@@ -1,17 +1,53 @@
 import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { generateOutfits } from '../../lib/claude';
+import { generateOutfits, generateOutfitsFromPrompt } from '../../lib/claude';
 import { outfitKey } from '../../lib/outfitKey';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import ProfileAvatar from '../../components/ProfileAvatar';
 import OutfitCard from '../../components/OutfitCard';
+import IdeaSheet from '../../components/IdeaSheet';
 import { colors, spacing, fonts } from '../../constants/theme';
 
 function computeWardrobeKey(items) {
   return items.map((i) => `${i.id}:${i.updated_at}`).sort().join('|');
 }
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex({ r, g, b }) {
+  return '#' + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+}
+
+// Ease-in-out (zero slope at both ends) so the fade meets the flat panels on
+// either side without a visible seam — a plain 2-stop gradient has a constant
+// rate of change that reads as a hard edge against a flat color.
+function buildFadeStops(colorA, colorB, steps = 6) {
+  const a = hexToRgb(colorA);
+  const b = hexToRgb(colorB);
+  const colorStops = [];
+  const locations = [];
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1);
+    const eased = t * t * (3 - 2 * t);
+    colorStops.push(rgbToHex({
+      r: a.r + (b.r - a.r) * eased,
+      g: a.g + (b.g - a.g) * eased,
+      b: a.b + (b.b - a.b) * eased,
+    }));
+    locations.push(t);
+  }
+  return { colors: colorStops, locations };
+}
+
+const fadeToDark = buildFadeStops(colors.background, colors.darkPanel);
+const fadeToLight = buildFadeStops(colors.darkPanel, colors.background);
 
 export default function OutfitsScreen() {
   const [outfits, setOutfits] = useState([]);
@@ -19,6 +55,10 @@ export default function OutfitsScreen() {
   const [loading, setLoading] = useState(false);
   const [upToDate, setUpToDate] = useState(false);
   const [likedKeys, setLikedKeys] = useState(new Set());
+  const [ideaVisible, setIdeaVisible] = useState(false);
+  const [ideaItems, setIdeaItems] = useState([]);
+  const [ideaLoading, setIdeaLoading] = useState(false);
+  const [ideaResult, setIdeaResult] = useState(null);
 
   useFocusEffect(useCallback(() => { loadSavedOutfits(); }, []));
 
@@ -41,7 +81,7 @@ export default function OutfitsScreen() {
     loadLikedKeys(user.id);
   }
 
-  async function toggleLike(outfit) {
+  async function toggleLike(outfit, map = itemMap) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -68,7 +108,7 @@ export default function OutfitsScreen() {
     }
 
     const items = (outfit.item_ids || []).map((id) => {
-      const it = itemMap[id];
+      const it = map[id];
       return it ? { id: it.id, name: it.name, image_url: it.image_url } : { id };
     });
 
@@ -147,6 +187,32 @@ export default function OutfitsScreen() {
     }
   }
 
+  async function openIdeaSheet() {
+    const { data: items, error } = await supabase.from('clothing_items').select('*');
+    if (error) { Alert.alert('Error', error.message); return; }
+    if ((items || []).length < 2) {
+      Alert.alert('Not enough pieces', 'Add at least 2 pieces to your wardrobe first');
+      return;
+    }
+    setIdeaItems(items);
+    setIdeaVisible(true);
+  }
+
+  async function handleIdeaSubmit({ note, anchorItemIds }) {
+    setIdeaLoading(true);
+    try {
+      const result = await generateOutfitsFromPrompt(ideaItems, { note, anchorItemIds });
+      const map = {};
+      ideaItems.forEach((item) => { map[item.id] = item; });
+      setIdeaResult({ outfits: result.outfits || [], feedback: result.feedback, itemMap: map });
+      setIdeaVisible(false);
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setIdeaLoading(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       {loading && <LoadingOverlay message="Styling your looks…" />}
@@ -164,6 +230,51 @@ export default function OutfitsScreen() {
           <View style={styles.btnDiamond} />
           <Text style={styles.generateBtnText}>GENERATE OUTFIT IDEAS</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.ideaBtn} onPress={openIdeaSheet}>
+          <Text style={styles.ideaBtnText}>STYLE MY IDEA</Text>
+        </TouchableOpacity>
+
+        {ideaResult && (
+          <View style={styles.ideaResults}>
+            <LinearGradient colors={fadeToDark.colors} locations={fadeToDark.locations} style={styles.ideaFade} />
+
+            <View style={styles.ideaDark}>
+              <View style={styles.ideaResultsHeader}>
+                <View>
+                  <Text style={styles.ideaKicker}>◆ CUSTOM STYLING</Text>
+                  <Text style={styles.ideaResultsTitle}>From Your Idea</Text>
+                </View>
+                <TouchableOpacity onPress={() => setIdeaResult(null)}>
+                  <Text style={styles.ideaClearLink}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+
+              {ideaResult.outfits.length === 0 ? (
+                <Text style={styles.ideaFeedback}>
+                  {ideaResult.feedback || "Nothing in your wardrobe honestly fits that — try a different idea."}
+                </Text>
+              ) : (
+                ideaResult.outfits.map((outfit, i) => (
+                  <OutfitCard
+                    key={`idea-${i}`}
+                    dark
+                    name={outfit.name}
+                    occasion={outfit.occasion}
+                    season={outfit.season}
+                    description={outfit.description}
+                    confidence={outfit.confidence}
+                    pieces={(outfit.item_ids || []).map((id) => ideaResult.itemMap[id]).filter(Boolean)}
+                    liked={likedKeys.has(outfitKey(outfit))}
+                    onToggleLike={() => toggleLike(outfit, ideaResult.itemMap)}
+                  />
+                ))
+              )}
+            </View>
+
+            <LinearGradient colors={fadeToLight.colors} locations={fadeToLight.locations} style={styles.ideaFade} />
+          </View>
+        )}
 
         {upToDate && (
           <View style={styles.upToDateRow}>
@@ -198,6 +309,14 @@ export default function OutfitsScreen() {
           ))
         )}
       </ScrollView>
+
+      <IdeaSheet
+        visible={ideaVisible}
+        items={ideaItems}
+        loading={ideaLoading}
+        onClose={() => setIdeaVisible(false)}
+        onSubmit={handleIdeaSubmit}
+      />
     </View>
   );
 }
@@ -226,6 +345,38 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   generateBtnText: { fontSize: 11, letterSpacing: 4, color: '#F4F1EB' },
+  ideaBtn: {
+    marginHorizontal: 22,
+    marginTop: 10,
+    height: 50,
+    borderWidth: 1,
+    borderColor: colors.text,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ideaBtnText: { fontSize: 11, letterSpacing: 4, color: colors.text },
+  ideaResults: { marginTop: spacing.lg },
+  ideaFade: { height: 140 },
+  ideaDark: { backgroundColor: colors.darkPanel, paddingBottom: 8 },
+  ideaResultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 22,
+    paddingTop: 24,
+  },
+  ideaKicker: { fontSize: 9.5, letterSpacing: 3, color: colors.accent, marginBottom: 6 },
+  ideaResultsTitle: { fontFamily: fonts.serifMedium, fontSize: 20, color: '#F4F1EB' },
+  ideaClearLink: { fontSize: 11, color: '#B8B2A3', textDecorationLine: 'underline', marginTop: 4 },
+  ideaFeedback: {
+    fontFamily: fonts.serifItalic,
+    fontSize: 15,
+    lineHeight: 23,
+    color: '#D9D4C8',
+    paddingHorizontal: 22,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
   upToDateRow: {
     marginHorizontal: 22,
     padding: spacing.md,

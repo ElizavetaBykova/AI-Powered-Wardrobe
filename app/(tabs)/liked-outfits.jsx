@@ -4,22 +4,26 @@ import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import ProfileAvatar from '../../components/ProfileAvatar';
 import OutfitCard from '../../components/OutfitCard';
+import Spinner from '../../components/Spinner';
 import { colors, spacing, fonts } from '../../constants/theme';
 
 export default function LikedOutfitsScreen() {
   const [liked, setLiked] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(useCallback(() => { loadLiked(); }, []));
 
   async function loadLiked() {
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const { data } = await supabase
       .from('liked_outfits')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     setLiked(data || []);
+    setLoading(false);
   }
 
   async function handleUnlike(row) {
@@ -40,7 +44,11 @@ export default function LikedOutfitsScreen() {
           <Text style={styles.subtitle}>Your Favorites</Text>
         </View>
 
-        {liked.length === 0 ? (
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <Spinner size={26} thickness={2} />
+          </View>
+        ) : liked.length === 0 ? (
           <View style={styles.empty}>
             <View style={styles.emptyDiamond} />
             <Text style={styles.emptyTitle}>No Liked Looks</Text>
@@ -74,6 +82,7 @@ const styles = StyleSheet.create({
   avatarBtn: { position: 'absolute', left: 22, top: 60 },
   title: { fontFamily: fonts.serif, fontSize: 23, letterSpacing: 8, color: colors.text },
   subtitle: { fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: colors.muted, marginTop: 8 },
+  loadingBox: { paddingTop: 100, alignItems: 'center' },
   empty: { paddingTop: 80, paddingHorizontal: 40, alignItems: 'center', gap: spacing.md },
   emptyDiamond: { width: 26, height: 26, borderWidth: 1, borderColor: colors.accent, transform: [{ rotate: '45deg' }] },
   emptyTitle: { fontFamily: fonts.serifMedium, fontSize: 26, color: colors.text, marginTop: spacing.md },

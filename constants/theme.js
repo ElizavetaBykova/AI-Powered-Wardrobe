@@ -8,6 +8,7 @@ export const colors = {
   accent: '#9C7F50',
   error: '#C0392B',
   like: '#B5636B',
+  darkPanel: '#2B2721',
 };
 
 export const fonts = {
