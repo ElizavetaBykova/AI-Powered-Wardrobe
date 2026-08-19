@@ -38,6 +38,14 @@ export default function TabLayout() {
           tabBarLabel: ({ focused }) => <TabLabel label="OUTFITS" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="liked-outfits"
+        options={{
+          tabBarIcon: () => null,
+          tabBarIconStyle: styles.noIcon,
+          tabBarLabel: ({ focused }) => <TabLabel label="LIKED" focused={focused} />,
+        }}
+      />
     </Tabs>
   );
 }

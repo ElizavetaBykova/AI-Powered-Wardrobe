@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { generateOutfits } from '../../lib/claude';
+import { outfitKey } from '../../lib/outfitKey';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import ProfileAvatar from '../../components/ProfileAvatar';
+import OutfitCard from '../../components/OutfitCard';
 import { colors, spacing, fonts } from '../../constants/theme';
 
 function computeWardrobeKey(items) {
@@ -16,8 +18,14 @@ export default function OutfitsScreen() {
   const [itemMap, setItemMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [upToDate, setUpToDate] = useState(false);
+  const [likedKeys, setLikedKeys] = useState(new Set());
 
   useFocusEffect(useCallback(() => { loadSavedOutfits(); }, []));
+
+  async function loadLikedKeys(userId) {
+    const { data } = await supabase.from('liked_outfits').select('outfit_key').eq('user_id', userId);
+    setLikedKeys(new Set((data || []).map((r) => r.outfit_key)));
+  }
 
   async function loadSavedOutfits() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -30,6 +38,59 @@ export default function OutfitsScreen() {
       .limit(1)
       .single();
     if (data) { setOutfits(data.outfits); setItemMap(data.item_map); }
+    loadLikedKeys(user.id);
+  }
+
+  async function toggleLike(outfit) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const key = outfitKey(outfit);
+    const alreadyLiked = likedKeys.has(key);
+
+    setLikedKeys((prev) => {
+      const next = new Set(prev);
+      if (alreadyLiked) next.delete(key); else next.add(key);
+      return next;
+    });
+
+    if (alreadyLiked) {
+      const { error } = await supabase
+        .from('liked_outfits')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('outfit_key', key);
+      if (error) {
+        setLikedKeys((prev) => new Set(prev).add(key));
+        Alert.alert('Error', error.message);
+      }
+      return;
+    }
+
+    const items = (outfit.item_ids || []).map((id) => {
+      const it = itemMap[id];
+      return it ? { id: it.id, name: it.name, image_url: it.image_url } : { id };
+    });
+
+    const { error } = await supabase.from('liked_outfits').insert({
+      user_id: user.id,
+      outfit_key: key,
+      name: outfit.name,
+      occasion: outfit.occasion,
+      description: outfit.description,
+      season: outfit.season,
+      item_ids: outfit.item_ids,
+      items,
+    });
+
+    if (error && error.code !== '23505') {
+      setLikedKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      Alert.alert('Error', error.message);
+    }
   }
 
   async function handleGenerate(force = false) {
@@ -123,33 +184,17 @@ export default function OutfitsScreen() {
           </View>
         ) : (
           outfits.map((outfit, i) => (
-            <View key={i} style={styles.outfitCard}>
-              <View style={styles.outfitHeader}>
-                <Text style={styles.outfitNum}>{String(i + 1).padStart(2, '0')}</Text>
-                <View style={styles.outfitHeaderText}>
-                  <Text style={styles.outfitName}>{outfit.name}</Text>
-                  <Text style={styles.outfitMeta}>{outfit.occasion} · {outfit.season}</Text>
-                </View>
-              </View>
-              <Text style={styles.outfitNote}>{outfit.description}</Text>
-
-              <View style={styles.piecesRow}>
-                {(outfit.item_ids || []).map((itemId) => {
-                  const item = itemMap[itemId];
-                  if (!item) return null;
-                  return (
-                    <View key={itemId} style={styles.pieceItem}>
-                      {item.image_url ? (
-                        <Image source={{ uri: item.image_url }} style={styles.pieceImage} />
-                      ) : (
-                        <View style={[styles.pieceImage, styles.piecePlaceholder]} />
-                      )}
-                      <Text style={styles.pieceName} numberOfLines={2}>{item.name}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
+            <OutfitCard
+              key={i}
+              number={String(i + 1).padStart(2, '0')}
+              name={outfit.name}
+              occasion={outfit.occasion}
+              season={outfit.season}
+              description={outfit.description}
+              pieces={(outfit.item_ids || []).map((id) => itemMap[id]).filter(Boolean)}
+              liked={likedKeys.has(outfitKey(outfit))}
+              onToggleLike={() => toggleLike(outfit)}
+            />
           ))
         )}
       </ScrollView>
@@ -195,16 +240,4 @@ const styles = StyleSheet.create({
   emptyDiamond: { width: 26, height: 26, borderWidth: 1, borderColor: colors.accent, transform: [{ rotate: '45deg' }] },
   emptyTitle: { fontFamily: fonts.serifMedium, fontSize: 26, color: colors.text, marginTop: spacing.md },
   emptyText: { fontFamily: fonts.serif, fontSize: 16, lineHeight: 24, color: colors.muted, textAlign: 'center', fontStyle: 'italic' },
-  outfitCard: { paddingHorizontal: 22, paddingTop: 28, paddingBottom: 6, borderTopWidth: 1, borderTopColor: colors.border },
-  outfitHeader: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
-  outfitNum: { fontFamily: fonts.serif, fontSize: 15, color: colors.accent, paddingTop: 4 },
-  outfitHeaderText: { flex: 1 },
-  outfitName: { fontFamily: fonts.serifMedium, fontSize: 24, lineHeight: 28, color: colors.text },
-  outfitMeta: { fontSize: 9.5, letterSpacing: 2, textTransform: 'uppercase', color: colors.muted, marginTop: 7 },
-  outfitNote: { fontFamily: fonts.serifItalic, fontSize: 16.5, lineHeight: 25, color: colors.secondary, marginTop: 14, marginBottom: 20 },
-  piecesRow: { flexDirection: 'row', gap: 9 },
-  pieceItem: { flex: 1 },
-  pieceImage: { aspectRatio: 3 / 4, backgroundColor: '#ECE8E0', resizeMode: 'cover' },
-  piecePlaceholder: { backgroundColor: '#E5E0D6' },
-  pieceName: { fontSize: 8.5, letterSpacing: 1, textTransform: 'uppercase', color: colors.muted, marginTop: 7, textAlign: 'center', lineHeight: 13 },
 });

@@ -7,6 +7,7 @@ export const colors = {
   border: 'rgba(20,17,13,0.12)',
   accent: '#9C7F50',
   error: '#C0392B',
+  like: '#B5636B',
 };
 
 export const fonts = {
